@@ -2,7 +2,7 @@ use std::io::{self, Write};
 
 use super::{tea::Tea, WriteTo};
 
-struct DataWriter {
+pub struct DataWriter {
     buff: Vec<u8>,
 }
 
@@ -23,28 +23,34 @@ impl WriteTo for DataWriter {
 }
 
 impl DataWriter {
-    pub fn new_filled<F>(mut func: F) -> Vec<u8>
-    where
-        F: FnMut(&mut Self),
-    {
-        let mut s = Self {
+    pub fn new() -> Self {
+        Self {
             buff: Vec::with_capacity(1024),
-        };
-        func(&mut s);
-        s.buff
+        }
     }
 
-    pub fn new<F>(mut func: F) -> Self
+    pub fn new_filled<F>(mut func: F) -> io::Result<Vec<u8>>
     where
-        F: FnMut(&mut Self),
+        F: FnMut(&mut Self) -> io::Result<()>,
     {
         let mut s = Self {
             buff: Vec::with_capacity(1024),
         };
-        func(&mut s);
-        s
+        func(&mut s)?;
+        Ok(s.buff)
     }
-    pub fn write_data<T: WriteTo>(&mut self, data: T) -> io::Result<()> {
+
+    pub fn new_init<F>(mut func: F) -> io::Result<Self>
+    where
+        F: FnMut(&mut Self) -> io::Result<()>,
+    {
+        let mut s = Self {
+            buff: Vec::with_capacity(1024),
+        };
+        func(&mut s)?;
+        Ok(s)
+    }
+    pub fn write_data<T: WriteTo>(&mut self, data: &T) -> io::Result<()> {
         data.write_to(self)
     }
     pub fn write_short_data<T: WriteTo>(&mut self, data: T) -> io::Result<()> {
@@ -57,12 +63,12 @@ impl DataWriter {
         src.write_to(self)
     }
 
-    pub fn write_in_tlv_package<F: FnMut(&mut Self)>(
+    pub fn write_in_tlv_package<F: FnMut(&mut Self)->io::Result<()>>(
         &mut self,
         offset: usize,
         func: F,
     ) -> io::Result<()> {
-        let tw = Self::new(func).buff;
+        let tw = Self::new_init(func)?.buff;
         ((tw.len() + offset) as u32).write_to(self)?;
         tw.write_to(self)
     }
@@ -74,22 +80,22 @@ impl DataWriter {
         extra_data: &[u8],
         body: &[u8],
     ) -> io::Result<()> {
-        let mut wt = Self::new(|_| {});
-        wt.write_data(command_name)?;
-        wt.write_data(8u32)?;
-        wt.write_data(session_id)?;
+        let mut wt = Self::new();
+        wt.write_data(&command_name)?;
+        wt.write_data(&8u32)?;
+        wt.write_data(&session_id)?;
 
         if extra_data.len() == 0 {
-            wt.write_data(0x04u32)?;
+            wt.write_data(&0x04u32)?;
         } else {
-            wt.write_data((extra_data.len() + 4) as u32)?;
-            wt.write_data(extra_data)?;
+            wt.write_data(&((extra_data.len() + 4) as u32))?;
+            wt.write_data(&extra_data)?;
         }
-        self.write_data((wt.buff.len() + 4) as u32)?;
-        self.write_data(wt)?;
+        self.write_data(&((wt.buff.len() + 4) as u32))?;
+        self.write_data(&wt)?;
 
-        self.write_data((body.len() + 4) as u32)?;
-        self.write_data(body)
+        self.write_data(&((body.len() + 4) as u32))?;
+        self.write_data(&body)
     }
 
     pub fn write_tlv_limited_size(&mut self, data: &[u8], limit: usize) -> io::Result<()> {
