@@ -5,6 +5,9 @@ mod data_reader;
 mod tea;
 mod write_impls;
 mod read_impls;
+mod protobuf;
+
+mod utils;
 
 pub trait WriteTo {
     fn write_to<W: Write>(&self, write: &mut W) -> io::Result<()>;
