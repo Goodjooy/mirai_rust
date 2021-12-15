@@ -77,7 +77,7 @@ impl Tea {
     /// http://bbs.chinaunix.net/thread-583468-1-1.html  
     /// 感谢xichen大佬对TEA的解释  
     /// [参考](https://github.com/Mrs4s/MiraiGo/blob/master/binary/tea.go)
-    pub fn encrypt(&self, src: Vec<u8>) -> Option<Vec<u8>> {
+    pub fn encrypt(&self, src: &[u8]) -> Option<Vec<u8>> {
         let src_size = src.len();
         let fill = 10 - (src_size + 1) % 8;
         let total_size = fill + src_size + 7;
@@ -107,7 +107,7 @@ impl Tea {
         Some(res_dst)
     }
 
-    pub fn decrypt(&self, data: Vec<u8>) -> Option<Vec<u8>> {
+    pub fn decrypt(&self, data: &[u8]) -> Option<Vec<u8>> {
         let data_size = data.len();
         if data.len() < 16 || data.len() % 8 != 0 {
             return None;
@@ -181,6 +181,8 @@ impl Tea {
 
 #[cfg(test)]
 mod test {
+
+
     use rand::{distributions::Alphanumeric, Rng};
 
     use super::*;
@@ -189,12 +191,12 @@ mod test {
         let key = "0123456789ABCDEF".as_bytes();
         let tea = Tea::new(key);
         let src = "MiraiGO Here".bytes().collect::<Vec<_>>();
-        let res = tea.encrypt(src);
+        let res = tea.encrypt(&src);
 
         assert_ne!(res, None);
 
         let res = res.unwrap();
-        let dres = tea.decrypt(res).unwrap();
+        let dres = tea.decrypt(&res).unwrap();
         assert_eq!("MiraiGO Here".bytes().collect::<Vec<_>>(), dres);
     }
 
@@ -206,7 +208,8 @@ mod test {
         ];
         let key = "0123456789ABCDEF".as_bytes();
         let tea = Tea::new(key);
-        let dres = tea.decrypt(tres.into_iter().collect()).unwrap();
+        let stres = tres.into_iter().collect::<Vec<_>>();
+        let dres = tea.decrypt(&stres).unwrap();
         assert_eq!("MiraiGO Here".bytes().collect::<Vec<_>>(), dres);
     }
 
@@ -215,7 +218,7 @@ mod test {
         let key = "0123456789ABCDEF".as_bytes();
         let tea = Tea::new(key);
 
-        for i in 0..5{
+        for i in 0..5 {
             println!("Doing Num {} test", i);
             let data: String = rand::thread_rng()
                 .sample_iter(&Alphanumeric)
@@ -224,15 +227,14 @@ mod test {
                 .collect();
             println!("test String is {}", data);
 
-            let ec = tea
-                .encrypt(data.clone().bytes().into_iter().collect())
-                .unwrap();
+            let d = data.clone().bytes().into_iter().collect::<Vec<_>>();
+            let ec = tea.encrypt(d.as_slice()).unwrap();
 
             //println!("ecrptyed is : {:?}", ec);
 
-            let de = tea.decrypt(ec).unwrap();
+            let de = tea.decrypt(&ec).unwrap();
 
-            println!("decrptyed is   {}",  String::from_utf8_lossy(&de));
+            println!("decrptyed is   {}", String::from_utf8_lossy(&de));
 
             assert_eq!(String::from_utf8_lossy(&de).to_string(), data);
         }
