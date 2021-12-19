@@ -1,11 +1,10 @@
 use std::io::{self, Read, Write};
 
-mod data_writer;
-mod data_reader;
-mod tea;
-mod write_impls;
-mod read_impls;
-mod protobuf;
+pub mod data_writer;
+pub mod data_reader;
+pub mod write_impls;
+pub mod read_impls;
+pub mod protobuf;
 
 mod utils;
 

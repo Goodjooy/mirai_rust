@@ -8,3 +8,4 @@ mod tests {
 }
 
 mod binary;
+mod utils;

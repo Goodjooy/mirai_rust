@@ -1,6 +1,8 @@
 use std::io::{self, Write};
 
-use super::{tea::Tea, WriteTo};
+use crate::utils::crypto::{CryptoError, tea::CryptoResult};
+
+use super:: WriteTo;
 
 pub struct DataWriter {
     buff: Vec<u8>,
@@ -29,9 +31,9 @@ impl DataWriter {
         }
     }
 
-    pub fn new_filled<F>(mut func: F) -> io::Result<Vec<u8>>
+    pub fn new_filled<F>(mut func: F) -> CryptoResult<Vec<u8>>
     where
-        F: FnMut(&mut Self) -> io::Result<()>,
+        F: FnMut(&mut Self) -> CryptoResult<()>,
     {
         let mut s = Self {
             buff: Vec::with_capacity(1024),
@@ -40,9 +42,9 @@ impl DataWriter {
         Ok(s.buff)
     }
 
-    pub fn new_init<F>(mut func: F) -> io::Result<Self>
+    pub fn new_init<F>(mut func: F) -> CryptoResult<Self>
     where
-        F: FnMut(&mut Self) -> io::Result<()>,
+        F: FnMut(&mut Self) -> CryptoResult<()>,
     {
         let mut s = Self {
             buff: Vec::with_capacity(1024),
@@ -58,19 +60,19 @@ impl DataWriter {
     }
 
     pub fn encrypted_write(&mut self, key: &[u8], data: &[u8]) -> io::Result<()> {
-        let tea = Tea::new(key);
+        let tea = crate::utils::crypto::tea::Tea::new(key).expect("Tea Create Error");
         let src = tea.encrypt(data).expect("Failure to Encrypt");
         src.write_to(self)
     }
 
-    pub fn write_in_tlv_package<F: FnMut(&mut Self)->io::Result<()>>(
+    pub fn write_in_tlv_package<F: FnMut(&mut Self)->CryptoResult<()>>(
         &mut self,
         offset: usize,
         func: F,
-    ) -> io::Result<()> {
+    ) -> CryptoResult<()> {
         let tw = Self::new_init(func)?.buff;
         ((tw.len() + offset) as u32).write_to(self)?;
-        tw.write_to(self)
+        Ok(tw.write_to(self)?)
     }
 
     pub fn write_in_uni_package(

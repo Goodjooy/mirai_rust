@@ -34,9 +34,6 @@ impl<T: Write> VarInt for T {
     }
 }
 
-pub trait WriteToVarInt
-
-{
-    fn write_to_varint(&self, writer: &mut DataEncoder, key: u64) -> io::Result<()>
-    ;
+pub trait WriteToVarInt {
+    fn write_to_varint(&self, writer: &mut DataEncoder, key: u64) -> io::Result<()>;
 }

@@ -1,5 +1,7 @@
 use std::io::{self, Cursor, Read};
 
+use crate::utils::crypto::tea::CryptoResult;
+
 use super::{WriteTo, data_writer::DataWriter};
 
 pub fn zlib_uncompress(src: Vec<u8>) -> io::Result<Vec<u8>> {
@@ -30,6 +32,6 @@ pub fn gzip_compress(data: Vec<u8>) -> io::Result<Vec<u8>> {
     Ok(res)
 }
 
-pub fn to_bytes<T: WriteTo>(data: &T) -> io::Result<Vec<u8>> {
-    DataWriter::new_filled(|w| w.write_data(data))
+pub fn to_bytes<T: WriteTo>(data: &T) -> CryptoResult<Vec<u8>> {
+    DataWriter::new_filled(|w| Ok(w.write_data(data)?))
 }

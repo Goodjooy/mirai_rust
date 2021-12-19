@@ -6,6 +6,30 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# write num to u8 silce
 byteorder = "1.4.3"
+
+# random data generate
 rand = "0.8.4"
+
+# zlib and gzip support
 flate2 = "1.0.22"
+
+# hex encode  decoder
+hex = "0.4.3"
+
+k256={version = "0.10.0",  features = ["ecdh"]} 
+rand_core = "0.6.3"
+
+[dependencies.serde]
+version = "1.0.132"
+features=["derive"]
+
+
+[dependencies.reqwest]
+ version = "0.11" 
+ features = ["json"] 
+
+[dependencies.tokio]
+ version = "1"
+ features = ["full"] 
